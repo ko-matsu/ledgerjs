@@ -13,7 +13,9 @@ export function startUntrustedHashTransactionInputRaw(
   overwinter?: boolean = false,
   additionals: Array<string> = []
 ) {
-  const p2 = bip143
+  const p2 = additionals.includes("liquid")
+    ? 0x06
+    : bip143
     ? additionals.includes("sapling")
       ? 0x05
       : overwinter
@@ -61,7 +63,7 @@ export async function startUntrustedHashTransactionInput(
   for (let input of transaction.inputs) {
     let prefix;
     if (bip143) {
-      prefix = Buffer.from([0x02]);
+      prefix = Buffer.from([additionals.includes("liquid") ? 0x03 : 0x02]);
     } else {
       if (inputs[i].trustedInput) {
         prefix = Buffer.from([0x01, inputs[i].value.length]);

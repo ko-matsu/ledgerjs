@@ -1,6 +1,7 @@
 // @flow
 import type { Transaction } from "./types";
 import { getVarint } from "./varint";
+import { getConfidentialDataSize } from "./elements";
 
 export function splitTransaction(
   transactionHex: string,
@@ -18,13 +19,20 @@ export function splitTransaction(
   let nVersionGroupId = Buffer.alloc(0);
   let extraData = Buffer.alloc(0);
   const isDecred = additionals.includes("decred");
+  const isLiquid = additionals.includes("liquid");
   const transaction = Buffer.from(transactionHex, "hex");
   const version = transaction.slice(offset, offset + 4);
   const overwinter =
     version.equals(Buffer.from([0x03, 0x00, 0x00, 0x80])) ||
     version.equals(Buffer.from([0x04, 0x00, 0x00, 0x80]));
   offset += 4;
-  if (
+  if (isLiquid) {
+    if (transaction[offset] !== 1) {
+      throw new Error("splitTransaction: unsupported Liquid version");
+    }
+    offset++;
+    witness = true;
+  } else if (
     !hasTimestamp &&
     isSegwitSupported &&
     transaction[offset] === 0 &&
@@ -69,8 +77,22 @@ export function splitTransaction(
   const numberOutputs = varint[0];
   offset += varint[1];
   for (let i = 0; i < numberOutputs; i++) {
-    const amount = transaction.slice(offset, offset + 8);
-    offset += 8;
+    let amount;
+    let assetCommitment, nonce;
+    if (isLiquid) {
+      let size = getConfidentialDataSize(transaction[offset]);
+      assetCommitment = transaction.slice(offset, offset + size);
+      offset += size;
+      size = getConfidentialDataSize(transaction[offset], true);
+      amount = transaction.slice(offset, offset + size);
+      offset += size;
+      size = getConfidentialDataSize(transaction[offset], false, true);
+      nonce = transaction.slice(offset, offset + size);
+      offset += size;
+    } else {
+      amount = transaction.slice(offset, offset + 8);
+      offset += 8;
+    }
 
     if (isDecred) {
       //Script version
@@ -81,12 +103,27 @@ export function splitTransaction(
     offset += varint[1];
     const script = transaction.slice(offset, offset + varint[0]);
     offset += varint[0];
-    outputs.push({ amount, script });
+    if (isLiquid) {
+      outputs.push({
+        undefined,
+        script,
+        assetCommitment,
+        amount,
+        nonce
+      });
+    } else {
+      outputs.push({ amount, script });
+    }
   }
   let witnessScript, locktime;
   if (witness) {
-    witnessScript = transaction.slice(offset, -4);
-    locktime = transaction.slice(transaction.length - 4);
+    if (isLiquid) {
+      witnessScript = transaction.slice(offset + 4);
+      locktime = transaction.slice(offset, offset + 4);
+    } else {
+      witnessScript = transaction.slice(offset, -4);
+      locktime = transaction.slice(transaction.length - 4);
+    }
   } else {
     locktime = transaction.slice(offset, offset + 4);
   }
@@ -131,6 +168,7 @@ export function splitTransaction(
     timestamp,
     nVersionGroupId,
     nExpiryHeight,
-    extraData
+    extraData,
+    liquid: isLiquid
   };
 }

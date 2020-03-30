@@ -8,6 +8,7 @@ export function signTransaction(
   lockTime: number,
   sigHashType: number,
   expiryHeight?: Buffer,
+  authorization?: Buffer,
   additionals: Array<string> = []
 ): Promise<Buffer> {
   const isDecred = additionals.includes("decred");
@@ -23,7 +24,7 @@ export function signTransaction(
       ])
     : Buffer.concat([
         pathsBuffer,
-        Buffer.from([0x00]),
+        typeof authorization === "undefined" ? Buffer.from([0x00]) : Buffer.concat([Buffer.from([authorization.length]), authorization]),
         lockTimeBuffer,
         Buffer.from([sigHashType])
       ]);

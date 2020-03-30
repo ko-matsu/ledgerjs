@@ -295,6 +295,7 @@ export async function createTransaction(
       lockTime,
       sigHashType,
       expiryHeight,
+      undefined,
       additionals
     );
     notify(1, i + 1);

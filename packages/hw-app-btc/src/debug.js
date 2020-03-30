@@ -12,9 +12,19 @@ export function displayTransactionDebug(transaction: Transaction) {
     );
   });
   (transaction.outputs || []).forEach((output, i) => {
-    const amount = output.amount.toString("hex");
-    const script = output.script.toString("hex");
-    console.log(`output ${i} amount ${amount} script ${script}`);
+    if (transaction.liquid) {
+      const assetCommitment = output.assetCommitment.toString("hex");
+      const valueCommitment = output.amount.toString("hex");
+      const nonce = output.nonce.toString("hex");
+      const script = output.script.toString("hex");
+      console.log(
+        `output ${i} assetCommitment ${assetCommitment} valueCommitment ${valueCommitment} nonce ${nonce} script ${script}`
+      );
+    } else {
+      const amount = output.amount.toString("hex");
+      const script = output.script.toString("hex");
+      console.log(`output ${i} amount ${amount} script ${script}`);
+    }
   });
   if (typeof transaction.locktime !== "undefined") {
     console.log("locktime " + transaction.locktime.toString("hex"));

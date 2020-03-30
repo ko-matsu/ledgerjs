@@ -12,12 +12,23 @@ export function serializeTransactionOutputs({ outputs }: Transaction): Buffer {
   if (typeof outputs !== "undefined") {
     outputBuffer = Buffer.concat([outputBuffer, createVarint(outputs.length)]);
     outputs.forEach(output => {
-      outputBuffer = Buffer.concat([
-        outputBuffer,
-        output.amount,
-        createVarint(output.script.length),
-        output.script
-      ]);
+      if (typeof output.assetCommitment === "undefined") {
+        outputBuffer = Buffer.concat([
+          outputBuffer,
+          output.amount,
+          createVarint(output.script.length),
+          output.script
+        ]);
+      } else {
+        outputBuffer = Buffer.concat([
+          outputBuffer,
+          output.assetCommitment,
+          output.amount,
+          output.nonce,
+          createVarint(output.script.length),
+          output.script
+        ]);
+      }
     });
   }
   return outputBuffer;
@@ -56,20 +67,32 @@ export function serializeTransaction(
     typeof transaction.outputs !== "undefined" &&
     typeof transaction.locktime !== "undefined"
   ) {
-    outputBuffer = Buffer.concat([
-      outputBuffer,
-      (useWitness && transaction.witness) || Buffer.alloc(0),
-      transaction.locktime,
-      transaction.nExpiryHeight || Buffer.alloc(0),
-      transaction.extraData || Buffer.alloc(0)
-    ]);
+    if (transaction.liquid) {
+      outputBuffer = Buffer.concat([
+        outputBuffer,
+        transaction.locktime,
+        (useWitness && transaction.witness) || Buffer.alloc(0)
+      ]);
+    } else {
+      outputBuffer = Buffer.concat([
+        outputBuffer,
+        (useWitness && transaction.witness) || Buffer.alloc(0),
+        transaction.locktime,
+        transaction.nExpiryHeight || Buffer.alloc(0),
+        transaction.extraData || Buffer.alloc(0)
+      ]);
+    }
   }
 
   return Buffer.concat([
     transaction.version,
     timestamp ? timestamp : Buffer.alloc(0),
     transaction.nVersionGroupId || Buffer.alloc(0),
-    useWitness ? Buffer.from("0001", "hex") : Buffer.alloc(0),
+    transaction.liquid
+      ? Buffer.from(useWitness ? "01" : "00", "hex")
+      : useWitness
+      ? Buffer.from("0001", "hex")
+      : Buffer.alloc(0),
     createVarint(transaction.inputs.length),
     inputBuffer,
     outputBuffer

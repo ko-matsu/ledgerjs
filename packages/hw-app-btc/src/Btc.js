@@ -7,6 +7,8 @@ import { splitTransaction } from "./splitTransaction";
 import type { Transaction } from "./types";
 import { createTransaction } from "./createTransaction";
 import type { CreateTransactionArg } from "./createTransaction";
+import { createLiquidTransaction } from "./createLiquidTransaction";
+import type { CreateLiquidTransactionArg } from "./createLiquidTransaction";
 import { signP2SHTransaction } from "./signP2SHTransaction";
 import type { SignP2SHTransactionArg } from "./signP2SHTransaction";
 
@@ -221,6 +223,60 @@ const tx1 = btc.splitTransaction("01000000014ea60aeac5252c14291d428915bd7ccd1bfc
       hasExtraData,
       additionals
     );
+  }
+
+  /**
+   * To get the signature for all inputs of a Liquid transaction, call signLiquidTransaction with the following parameters
+   * Note that the host still has to compute the range proof and surjection proof for all outputs, and generate the final transaction
+   * @param inputs is an array of [ transaction, output_index, optional redeem script, optional sequence, optional value, optional abf, optional vbf, optional authorization ] where
+   *
+   * * transaction is the previously computed transaction object for this UTXO
+   * * output_index is the output in the transaction used as input for this UTXO (counting from 0)
+   * * redeem script is the optional redeem script to use when consuming this input provided as an hex string
+   * * sequence is the sequence number to use for this input (when using RBF), or non present
+   * * value is the value associated to this UTXO provided as an hex string
+   * * abf is the asset blinding factor associated to this UTXO provided as an hex string
+   * * vbf is the value blinding factor associated to this UTXO provided as an hex string
+   * * authorization is an optional authorization necessary to sign this input, provided as an hex string
+   * If the final nullifying vbf is provided in the ouputs, the value, abf and vbf fields do not need to be present
+
+   * @param associatedKeysets is an array of BIP 32 paths pointing to the path to the private key used for each UTXO
+   * @param changePath is an optional BIP 32 path pointing to the path to the public key used to compute the change address
+   * @param outputs is an array of [ amount, asset_tag, script, remoteBlindingKey, nonce, optional abf, optional assetCommitment, optional vbf, optional valueCommitment ] where
+   *
+   * * amount is the cleartext amount associated to this output provided as an hex string
+   * * asset_tag is the cleartext asset tag associated to this output provided as an hex string
+   * * script is the output script provided as an hex string
+   * * remoteBlindingKey is the remote blinding key of the party receiving this output provided as an hex string
+   * * nonce is the ephemeral public key of the ephemeral pair used to encode data in the range proof associated to this output provided as an hex string
+   * * abf is the optional asset blinding factor to be associated to this output, if provided by the host provided as an hex string
+   * * assetCommitment is the optional asset commitment to be associated to this output, provided as an hex string
+   * * vbf is the optional value blinding factor to be associated to this output, if provided by the host provided as an hex string
+   * * valueCommitment is he optional value commitment to be associated to this output, provided as an hex string   
+   * Each output will usually provide the amount, asset_tag, script, remoteBlindingKey, nonce. A vbf can be added for the final nullifying output
+   * Specific implementations can require passing the abf and vbf for all outputs. Validation of the abf, assetCommitment, vbf, valueCommitment is implementation dependant.
+   * 
+   * @param lockTime is the optional lockTime of the transaction to sign, or default (0)
+   * @param sigHashType is the hash type of the transaction to sign, or default (all)
+   * @param additionals list of additionnal options (RFU)
+   * @return an array of signatures, each signature matching a given input
+   */
+  signLiquidTransaction(arg: CreateLiquidTransactionArg) {
+    if (arguments.length > 1) {
+      console.warn(
+        "@ledgerhq/hw-app-btc: signLiquidTransaction multi argument signature is deprecated. please switch to named parameters."
+      );
+      arg = fromDeprecateArguments(arguments, [
+        "inputs",
+        "associatedKeysets",
+        "changePath",
+        "outputs",
+        "lockTime",
+        "sigHashType",
+        "additionals"
+      ]);
+    }
+    return createLiquidTransaction(this.transport, arg);
   }
 }
 
