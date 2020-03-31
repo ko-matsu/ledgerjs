@@ -6,6 +6,7 @@ import type { AddressFormat } from "./getWalletPublicKey";
 import { splitTransaction } from "./splitTransaction";
 import type { Transaction } from "./types";
 import { createTransaction } from "./createTransaction";
+import { serializeTransaction } from "./serializeTransaction";
 import type { CreateTransactionArg } from "./createTransaction";
 import { createLiquidTransaction } from "./createLiquidTransaction";
 import type { CreateLiquidTransactionArg } from "./createLiquidTransaction";
@@ -223,6 +224,30 @@ const tx1 = btc.splitTransaction("01000000014ea60aeac5252c14291d428915bd7ccd1bfc
       hasExtraData,
       additionals
     );
+  }
+
+  /**
+    * Serialize a transaction as an hexadecimal string or return the blob to use for a transaction authorization (Bitcoin application variant specific)
+    * @param transaction is the Transaction object to serialize
+    * @param liquidMetadata is an array of [ asset_tag, value ] where
+    *  * asset_tag is the cleartext asset tag associated to this output provided as an hex string
+    *  * value is the cleartext value associated to this output provided as an hex string    
+    * @param additionals list of additionnal options
+    * - "authorization" to compute a transaction authorization
+    * @return the serialized transaction or authorization as an hex string
+  */
+  serializeTransaction(
+    transaction: Transaction,
+    liquidMetadata?: Array<string, string>, 
+    additionals: string[] = []
+  ) : string {
+    const serializedTransaction = serializeTransaction(
+      transaction,
+      false,
+      undefined,
+      liquidMetadata,
+      additionals);
+    return serializedTransaction.toString("hex");
   }
 
   /**

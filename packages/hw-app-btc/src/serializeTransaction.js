@@ -7,11 +7,17 @@ import { createVarint } from "./varint";
 const tx1 = btc.splitTransaction("01000000014ea60aeac5252c14291d428915bd7ccd1bfc4af009f4d4dc57ae597ed0420b71010000008a47304402201f36a12c240dbf9e566bc04321050b1984cd6eaf6caee8f02bb0bfec08e3354b022012ee2aeadcbbfd1e92959f57c15c1c6debb757b798451b104665aa3010569b49014104090b15bde569386734abf2a2b99f9ca6a50656627e77de663ca7325702769986cf26cc9dd7fdea0af432c8e2becc867c932e1b9dd742f2a108997c2252e2bdebffffffff0281b72e00000000001976a91472a5d75c8d2d0565b656a5232703b167d50d5a2b88aca0860100000000001976a9144533f5fb9b4817f713c48f0bfe96b9f50c476c9b88ac00000000");
 const outputScript = btc.serializeTransactionOutputs(tx1).toString('hex');
   */
-export function serializeTransactionOutputs({ outputs }: Transaction): Buffer {
+export function serializeTransactionOutputs(
+    { outputs }: Transaction,
+    liquidMetadata?: Array<string, string>,
+    additionals: string[] = []  
+    ): Buffer {
+  const forAuthorization = additionals.includes("authorization");
   let outputBuffer = Buffer.alloc(0);
   if (typeof outputs !== "undefined") {
     outputBuffer = Buffer.concat([outputBuffer, createVarint(outputs.length)]);
-    outputs.forEach(output => {
+    for (let index=0; index<outputs.length; index++) {
+      let output = outputs[index];
       if (typeof output.assetCommitment === "undefined") {
         outputBuffer = Buffer.concat([
           outputBuffer,
@@ -20,16 +26,27 @@ export function serializeTransactionOutputs({ outputs }: Transaction): Buffer {
           output.script
         ]);
       } else {
-        outputBuffer = Buffer.concat([
-          outputBuffer,
-          output.assetCommitment,
-          output.amount,
-          output.nonce,
-          createVarint(output.script.length),
-          output.script
-        ]);
+        if (!forAuthorization) {
+          outputBuffer = Buffer.concat([
+            outputBuffer,
+            output.assetCommitment,
+            output.amount,
+            output.nonce,
+            createVarint(output.script.length),
+            output.script
+          ]);
+        }
+        else {
+          outputBuffer = Buffer.concat([
+            outputBuffer,
+            Buffer.from(liquidMetadata[index][0], "hex"),
+            Buffer.from(liquidMetadata[index][1], "hex"),
+            createVarint(output.script.length),
+            output.script
+          ]);          
+        }
       }
-    });
+    }
   }
   return outputBuffer;
 }
@@ -38,15 +55,22 @@ export function serializeTransaction(
   transaction: Transaction,
   skipWitness: boolean,
   timestamp?: Buffer,
+  liquidMetadata?: Array<string, string>, 
   additionals: string[] = []
 ) {
   const isDecred = additionals.includes("decred");
   const isBech32 = additionals.includes("bech32");
+  const forAuthorization = additionals.includes("authorization");
   let inputBuffer = Buffer.alloc(0);
-  let useWitness = typeof transaction["witness"] != "undefined" && !skipWitness;
+  let useWitness = typeof transaction["witness"] != "undefined" && !skipWitness && !forAuthorization;
   transaction.inputs.forEach(input => {
     inputBuffer =
-      isDecred || isBech32
+      forAuthorization ? Buffer.concat([
+         inputBuffer,
+         input.prevout,
+         input.sequence
+        ]) 
+      : isDecred || isBech32
         ? Buffer.concat([
             inputBuffer,
             input.prevout,
@@ -62,7 +86,7 @@ export function serializeTransaction(
           ]);
   });
 
-  let outputBuffer = serializeTransactionOutputs(transaction);
+  let outputBuffer = serializeTransactionOutputs(transaction, liquidMetadata, additionals);
   if (
     typeof transaction.outputs !== "undefined" &&
     typeof transaction.locktime !== "undefined"
@@ -70,14 +94,14 @@ export function serializeTransaction(
     if (transaction.liquid) {
       outputBuffer = Buffer.concat([
         outputBuffer,
-        transaction.locktime,
+        (!forAuthorization && transaction.locktime) || Buffer.alloc(0),
         (useWitness && transaction.witness) || Buffer.alloc(0)
       ]);
     } else {
       outputBuffer = Buffer.concat([
         outputBuffer,
         (useWitness && transaction.witness) || Buffer.alloc(0),
-        transaction.locktime,
+        (!forAuthorization && transaction.locktime) || Buffer.alloc(0),
         transaction.nExpiryHeight || Buffer.alloc(0),
         transaction.extraData || Buffer.alloc(0)
       ]);
@@ -89,8 +113,8 @@ export function serializeTransaction(
     timestamp ? timestamp : Buffer.alloc(0),
     transaction.nVersionGroupId || Buffer.alloc(0),
     transaction.liquid
-      ? Buffer.from(useWitness ? "01" : "00", "hex")
-      : useWitness
+      ? Buffer.from(forAuthorization ? "" : useWitness ? "01" : "00", "hex")
+      : useWitness && !forAuthorization
       ? Buffer.from("0001", "hex")
       : Buffer.alloc(0),
     createVarint(transaction.inputs.length),
