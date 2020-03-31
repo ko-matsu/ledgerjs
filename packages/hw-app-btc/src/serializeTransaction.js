@@ -39,8 +39,8 @@ export function serializeTransactionOutputs(
         else {
           outputBuffer = Buffer.concat([
             outputBuffer,
-            Buffer.from(liquidMetadata[index][0], "hex"),
-            Buffer.from(liquidMetadata[index][1], "hex"),
+            (liquidMetadata[index].length == 2 ? Buffer.from(liquidMetadata[index][0], "hex") : output.assetCommitment),
+            (liquidMetadata[index].length == 2 ? Buffer.from(liquidMetadata[index][1], "hex") : output.amount),
             createVarint(output.script.length),
             output.script
           ]);          

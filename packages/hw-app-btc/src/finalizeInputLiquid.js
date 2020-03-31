@@ -17,7 +17,9 @@ export async function hashOutputFullLiquid(
 
     await transport.send(0xe0, 0x4a, 0x00, 0x00, output.assetValueCommitments);
     await transport.send(0xe0, 0x4a, 0x00, 0x00, output.nonce);
-    await transport.send(0xe0, 0x4a, 0x00, 0x00, output.remoteBlindingKey);
+    if (typeof output.remoteBlindingKey !== "undefined") {
+      await transport.send(0xe0, 0x4a, 0x00, 0x00, output.remoteBlindingKey);
+    }
 
     let script = Buffer.concat([createVarint(output.script.length), output.script]);    
 

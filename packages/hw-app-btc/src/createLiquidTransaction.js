@@ -195,23 +195,32 @@ export async function createLiquidTransaction(
   // Build Liquid specific outputs
   // TODO : support use cases where abf and vbf are not provided
   for (let i = 0; i < outputs.length; i++) {
-    let currentOutput = {};
-    currentOutput["nonce"] = Buffer.from(outputs[i][4], "hex");
-    currentOutput["remoteBlindingKey"] = Buffer.from(outputs[i][3], "hex");
+    let currentOutput = {};    
     currentOutput["script"] = Buffer.from(outputs[i][2], "hex");
-    if (currentOutput["script"].length > 0) {
-      const assetValueCommitment = await liquidGetCommitments(
-        transport,
-        Buffer.from(outputs[i][1], "hex"),
-        Buffer.from(outputs[i][0], "hex"),
-        i,
-        Buffer.from(outputs[i][7], "hex"),
-        Buffer.from(outputs[i][5], "hex")
-      );
-      currentOutput["assetValueCommitments"] = assetValueCommitment["commitment"];
+    // If asset & value commitments are provided, use them as blind outputs
+    if ((typeof outputs[i][6] !== "undefined") && (typeof outputs[i][8] !== "undefined")) {
+      currentOutput["nonce"] = Buffer.from(outputs[i][4], "hex");
+      currentOutput["remoteBlindingKey"] = undefined;
+      currentOutput["assetValueCommitments"] = Buffer.concat([
+        Buffer.from(outputs[i][6], "hex"), Buffer.from(outputs[i][8], "hex")]);
     }
     else {
-      currentOutput["assetValueCommitments"] = Buffer.concat([Buffer.from([0x01]), Buffer.from(outputs[i][1], "hex").reverse(), Buffer.from([0x01]), Buffer.from(outputs[i][0], "hex")]);
+      currentOutput["nonce"] = Buffer.from(outputs[i][4], "hex");
+      currentOutput["remoteBlindingKey"] = Buffer.from(outputs[i][3], "hex");    
+      if (currentOutput["script"].length > 0) {
+        const assetValueCommitment = await liquidGetCommitments(
+          transport,
+          Buffer.from(outputs[i][1], "hex"),
+          Buffer.from(outputs[i][0], "hex"),
+          i,
+          Buffer.from(outputs[i][7], "hex"),
+          Buffer.from(outputs[i][5], "hex")
+        );
+        currentOutput["assetValueCommitments"] = assetValueCommitment["commitment"];
+      }
+      else {
+        currentOutput["assetValueCommitments"] = Buffer.concat([Buffer.from([0x01]), Buffer.from(outputs[i][1], "hex").reverse(), Buffer.from([0x01]), Buffer.from(outputs[i][0], "hex")]);
+      }
     }
     liquidOutputs.push(currentOutput);
   }

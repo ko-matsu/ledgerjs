@@ -280,6 +280,7 @@ const tx1 = btc.splitTransaction("01000000014ea60aeac5252c14291d428915bd7ccd1bfc
    * * valueCommitment is he optional value commitment to be associated to this output, provided as an hex string   
    * Each output will usually provide the amount, asset_tag, script, remoteBlindingKey, nonce. A vbf can be added for the final nullifying output
    * Specific implementations can require passing the abf and vbf for all outputs. Validation of the abf, assetCommitment, vbf, valueCommitment is implementation dependant.
+   * Specific implementations can allow signing with blind outputs by only providing the script, nonce, assetCommitment, and valueCommitment for specific blind outputs.
    * 
    * @param lockTime is the optional lockTime of the transaction to sign, or default (0)
    * @param sigHashType is the hash type of the transaction to sign, or default (all)
