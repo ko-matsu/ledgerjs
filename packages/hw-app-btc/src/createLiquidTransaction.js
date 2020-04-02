@@ -234,6 +234,12 @@ export async function createLiquidTransaction(
 
   // Do the second run with the individual transaction
   for (let i = 0; i < inputs.length; i++) {
+
+    if ((typeof associatedKeysets[i] === "undefined") || (associatedKeysets[i].length == 0)) {
+      signatures.push("");
+      continue;  
+    }
+
     const input = inputs[i];
     let script =
       inputs[i].length >= 3 && typeof input[2] === "string"
