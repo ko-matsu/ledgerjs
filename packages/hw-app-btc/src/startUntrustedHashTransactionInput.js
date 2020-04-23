@@ -59,11 +59,12 @@ export async function startUntrustedHashTransactionInput(
 
   let i = 0;
   const isDecred = additionals.includes("decred");
+  const isLiquid = additionals.includes("liquid");
 
   for (let input of transaction.inputs) {
     let prefix;
     if (bip143) {
-      prefix = Buffer.from([additionals.includes("liquid") ? 0x03 : 0x02]);
+      prefix = Buffer.from([isLiquid ? 0x03 : 0x02]);
     } else {
       if (inputs[i].trustedInput) {
         prefix = Buffer.from([0x01, inputs[i].value.length]);
@@ -119,6 +120,25 @@ export async function startUntrustedHashTransactionInput(
         newTransaction,
         false,
         scriptBlock,
+        bip143,
+        overwinter,
+        additionals
+      );
+    }
+
+    // Provide issuance information for Liquid input if necessary (headless mode only)
+    if (isLiquid && !newTransaction && typeof input.nonce !== "undefined") {
+      data = Buffer.concat([
+        input.nonce,
+        input.entropy,
+        input.issuanceAmount,
+        input.inflationKeys
+      ]);
+      await startUntrustedHashTransactionInputRaw(
+        transport,
+        newTransaction,
+        false,
+        data,
         bip143,
         overwinter,
         additionals

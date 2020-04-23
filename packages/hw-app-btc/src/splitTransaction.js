@@ -57,6 +57,10 @@ export function splitTransaction(
     offset += 36;
     let script = Buffer.alloc(0);
     let tree = Buffer.alloc(0);
+    let nonce = Buffer.alloc(0);
+    let entropy = Buffer.alloc(0);
+    let issuanceAmount = Buffer.alloc(0);
+    let inflationKeys = Buffer.alloc(0);    
     //No script for decred, it has a witness
     if (!isDecred) {
       varint = getVarint(transaction, offset);
@@ -68,10 +72,22 @@ export function splitTransaction(
       tree = transaction.slice(offset, offset + 1);
       offset += 1;
     }
-
     const sequence = transaction.slice(offset, offset + 4);
     offset += 4;
-    inputs.push({ prevout, script, sequence, tree });
+    if (isLiquid && ((prevout[35] & 0x80) != 0)) {
+      prevout[35] &= 0x7f;
+      nonce = transaction.slice(offset, offset + 32);
+      offset += 32;
+      entropy = transaction.slice(offset, offset + 32);
+      offset += 32;
+      let size = getConfidentialDataSize(transaction[offset]);
+      issuanceAmount = transaction.slice(offset, offset + size);
+      offset += size;
+      size = getConfidentialDataSize(transaction[offset]);
+      inflationKeys = transaction.slice(offset, offset + size);
+      offset += size;
+    }
+    inputs.push({ prevout, script, sequence, tree, nonce, entropy, issuanceAmount, inflationKeys });
   }
   varint = getVarint(transaction, offset);
   const numberOutputs = varint[0];

@@ -127,11 +127,18 @@ export async function createLiquidTransaction(
 
   // first pass on inputs to get trusted inputs
   for (let input of inputs) {
+
+    const trustedInputAdditionals = [...additionals];
+    // Add an issuance flag if necessary
+    if (input.length >= 12 && typeof input[8] === "string" && typeof input[9] === "string" && typeof input[10] === "string" && typeof input[11] === "string") {    
+      trustedInputAdditionals.push("issuance");
+    }
+
     const trustedInput = await getTrustedInputBIP143(
       transport,
       input[1],
       input[0],
-      additionals
+      trustedInputAdditionals
     );
     let sequence = Buffer.alloc(4);
     sequence.writeUInt32LE(
@@ -203,7 +210,7 @@ export async function createLiquidTransaction(
       currentOutput["remoteBlindingKey"] = undefined;
       currentOutput["assetValueCommitments"] = Buffer.concat([
         Buffer.from(outputs[i][6], "hex"), Buffer.from(outputs[i][8], "hex")]);
-    }
+    }    
     else {
       currentOutput["nonce"] = Buffer.from(outputs[i][4], "hex");
       currentOutput["remoteBlindingKey"] = Buffer.from(outputs[i][3], "hex");    
@@ -227,10 +234,26 @@ export async function createLiquidTransaction(
 
   await hashOutputFullLiquid(transport, liquidOutputs);
 
-  // Assume the inputs do not encode issuance information
+  // Provide pre encoded issuance information (headless mode only) or assume the inputs do not encode issuance information
+  let issuanceBuffer = Buffer.alloc(0);
+  for (let i = 0; i < inputs.length; i++) {
+    if (inputs[i].length >= 12 && typeof inputs[i][8] === "string" && typeof inputs[i][9] === "string" && typeof inputs[i][10] === "string" && typeof inputs[i][11] === "string") {
+      issuanceBuffer = Buffer.concat([
+        issuanceBuffer,
+        Buffer.from(inputs[i][8], "hex"),
+        Buffer.from(inputs[i][9], "hex"),
+        Buffer.from(inputs[i][10], "hex"),
+        Buffer.from(inputs[i][11], "hex")
+      ]);
+    }
+    else {
+      issuanceBuffer = Buffer.concat([
+        issuanceBuffer,
+        Buffer.from([0x00])]);
+    }
+  }
 
-  let issuanceInfoNull = Buffer.alloc(inputs.length, 0);
-  await liquidProvideIssuanceInformation(transport, issuanceInfoNull);
+  await liquidProvideIssuanceInformation(transport, issuanceBuffer);
 
   // Do the second run with the individual transaction
   for (let i = 0; i < inputs.length; i++) {
@@ -252,6 +275,19 @@ export async function createLiquidTransaction(
     let pseudoTX = Object.assign({}, targetTransaction);
     let pseudoTrustedInputs = [trustedInputs[i]];
     pseudoTX.inputs = [{ ...pseudoTX.inputs[i], script }];
+
+    if (inputs[i].length >= 9 && typeof input[8] === "string") {
+      pseudoTX.inputs[0].nonce = Buffer.from(input[8], "hex");
+    }
+    if (inputs[i].length >= 10 && typeof input[9] === "string") {
+      pseudoTX.inputs[0].entropy = Buffer.from(input[9], "hex");
+    }
+    if (inputs[i].length >= 11 && typeof input[10] === "string") {
+      pseudoTX.inputs[0].issuanceAmount = Buffer.from(input[10], "hex");
+    }
+    if (inputs[i].length >= 12 && typeof input[11] === "string") {
+      pseudoTX.inputs[0].inflationKeys = Buffer.from(input[11], "hex");
+    }
 
     await startUntrustedHashTransactionInput(
       transport,

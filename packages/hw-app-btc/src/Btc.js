@@ -253,7 +253,7 @@ const tx1 = btc.splitTransaction("01000000014ea60aeac5252c14291d428915bd7ccd1bfc
   /**
    * To get the signature for all inputs of a Liquid transaction, call signLiquidTransaction with the following parameters
    * Note that the host still has to compute the range proof and surjection proof for all outputs, and generate the final transaction
-   * @param inputs is an array of [ transaction, output_index, optional redeem script, optional sequence, optional value, optional abf, optional vbf, optional authorization ] where
+   * @param inputs is an array of [ transaction, output_index, optional redeem script, optional sequence, optional value, optional abf, optional vbf, optional authorization, optional entropy, optional contract_hash, optional asset_amount_commitment, optional reissuance_token_amount_commitment ] where
    *
    * * transaction is the previously computed transaction object for this UTXO
    * * output_index is the output in the transaction used as input for this UTXO (counting from 0)
@@ -263,6 +263,10 @@ const tx1 = btc.splitTransaction("01000000014ea60aeac5252c14291d428915bd7ccd1bfc
    * * abf is the asset blinding factor associated to this UTXO provided as an hex string
    * * vbf is the value blinding factor associated to this UTXO provided as an hex string
    * * authorization is an optional authorization necessary to sign this input, provided as an hex string
+   * * blinding_nonce is an optional parameter if this input is an issuance input signed blindly, provided as an hex string (reversed from dumprawtransaction, only for re-issuance, usually null for issuance)
+   * * entropy is an optional parameter if this input is an issuance input signed blindly, provided as an hex string (reversed from dumprawtransaction, only for re-issuance, usually null or contract hash for issuance)
+   * * asset_amount_commitment is an optional parameter if this input is an issuance input signed blindly, provided as an hex string
+   * * reissuance_token_amount_commitment is an optional parameter if this input is an issuance input signed blindly, provided as an hex string
    * If the final nullifying vbf is provided in the ouputs, the value, abf and vbf fields do not need to be present
 
    * @param associatedKeysets is an array of BIP 32 paths pointing to the path to the private key used for each UTXO

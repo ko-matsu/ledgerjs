@@ -1,6 +1,7 @@
 // @flow
 import type { Transaction } from "./types";
 import { createVarint } from "./varint";
+import shajs from "sha.js";
 
 /**
   @example
@@ -63,26 +64,43 @@ export function serializeTransaction(
   const forAuthorization = additionals.includes("authorization");
   let inputBuffer = Buffer.alloc(0);
   let useWitness = typeof transaction["witness"] != "undefined" && !skipWitness && !forAuthorization;
-  transaction.inputs.forEach(input => {
+  transaction.inputs.forEach(input => {    
+    let prevout;
+    if (transaction.liquid && !forAuthorization && (input.nonce.length != 0) && (input.entropy.length != 0)) {
+      prevout = Buffer.alloc(input.prevout.length);
+      input.prevout.copy(prevout);
+      prevout[35] |= 0x80;      
+    }
+    else {
+      prevout = input.prevout;
+    }
     inputBuffer =
       forAuthorization ? Buffer.concat([
          inputBuffer,
-         input.prevout,
+         prevout,
          input.sequence
         ]) 
       : isDecred || isBech32
         ? Buffer.concat([
             inputBuffer,
-            input.prevout,
+            prevout,
             Buffer.from([0x00]), //tree
-            input.sequence
+            input.sequence,
+            input.nonce || Buffer.alloc(0),
+            input.entropy || Buffer.alloc(0),
+            input.issuanceAmount || Buffer.alloc(0),
+            input.inflationKeys || Buffer.alloc(0)
           ])
         : Buffer.concat([
             inputBuffer,
-            input.prevout,
+            prevout,
             createVarint(input.script.length),
             input.script,
-            input.sequence
+            input.sequence,
+            input.nonce || Buffer.alloc(0),
+            input.entropy || Buffer.alloc(0),
+            input.issuanceAmount || Buffer.alloc(0),
+            input.inflationKeys || Buffer.alloc(0)
           ]);
   });
 
@@ -108,7 +126,7 @@ export function serializeTransaction(
     }
   }
 
-  return Buffer.concat([
+  let tx = Buffer.concat([
     transaction.version,
     timestamp ? timestamp : Buffer.alloc(0),
     transaction.nVersionGroupId || Buffer.alloc(0),
@@ -120,5 +138,26 @@ export function serializeTransaction(
     createVarint(transaction.inputs.length),
     inputBuffer,
     outputBuffer
-  ]);
+  ]);    
+  if (forAuthorization) {
+    let txAuth = shajs("sha256").update(tx).digest();
+    if (transaction.liquid) {
+      // Add issuances
+      let issuanceBuffer = Buffer.alloc(0);
+      transaction.inputs.forEach(input => {
+        if ((input.nonce.length != 0) && (input.entropy.length != 0)) {
+          issuanceBuffer = Buffer.concat([issuanceBuffer, input.nonce, input.entropy, input.issuanceAmount, input.inflationKeys]);        
+        }
+        else {
+          issuanceBuffer = Buffer.concat([issuanceBuffer, Buffer.from([0x00])]);
+        }
+      });
+      
+      txAuth = shajs("sha256").update(txAuth).update(shajs("sha256").update(issuanceBuffer).digest()).digest();
+    }
+    return txAuth;
+  }
+  else {
+    return tx;
+  }
 }

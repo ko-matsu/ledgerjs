@@ -6,7 +6,11 @@ export type TransactionInput = {
   prevout: Buffer,
   script: Buffer,
   sequence: Buffer,
-  tree?: Buffer
+  tree?: Buffer,
+  nonce?: Buffer, /** for Liquid issuance inputs */
+  entropy?: Buffer, /** for Liquid issuance inputs */
+  issuanceAmount?: Buffer, /** for Liquid issuance inputs */
+  inflationKeys?: Buffer /** for Liquid issuance inputs */
 };
 
 /**

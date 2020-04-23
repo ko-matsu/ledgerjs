@@ -10,6 +10,15 @@ export function displayTransactionDebug(transaction: Transaction) {
     console.log(
       `input ${i} prevout ${prevout} script ${script} sequence ${sequence}`
     );
+    if (transaction.liquid && (input.nonce.length != 0) && (input.entropy.length != 0)) {
+      const nonce = input.nonce.toString("hex");
+      const entropy = input.entropy.toString("hex");
+      const issuanceAmount = input.issuanceAmount.toString("hex");
+      const inflationKeys = input.inflationKeys.toString("hex");      
+      console.log(
+        `input ${i} nonce ${nonce} entropy ${entropy} issuance amount ${issuanceAmount} inflation keys ${inflationKeys}`
+      );
+    }
   });
   (transaction.outputs || []).forEach((output, i) => {
     if (transaction.liquid) {
