@@ -240,8 +240,8 @@ export async function createLiquidTransaction(
     if (inputs[i].length >= 12 && typeof inputs[i][8] === "string" && typeof inputs[i][9] === "string" && typeof inputs[i][10] === "string" && typeof inputs[i][11] === "string") {
       issuanceBuffer = Buffer.concat([
         issuanceBuffer,
-        Buffer.from(inputs[i][8], "hex"),
-        Buffer.from(inputs[i][9], "hex"),
+        Buffer.from(inputs[i][8], "hex").reverse(),
+        Buffer.from(inputs[i][9], "hex").reverse(),
         Buffer.from(inputs[i][10], "hex"),
         Buffer.from(inputs[i][11], "hex")
       ]);
@@ -277,10 +277,10 @@ export async function createLiquidTransaction(
     pseudoTX.inputs = [{ ...pseudoTX.inputs[i], script }];
 
     if (inputs[i].length >= 9 && typeof input[8] === "string") {
-      pseudoTX.inputs[0].nonce = Buffer.from(input[8], "hex");
+      pseudoTX.inputs[0].nonce = Buffer.from(input[8], "hex").reverse();
     }
     if (inputs[i].length >= 10 && typeof input[9] === "string") {
-      pseudoTX.inputs[0].entropy = Buffer.from(input[9], "hex");
+      pseudoTX.inputs[0].entropy = Buffer.from(input[9], "hex").reverse();
     }
     if (inputs[i].length >= 11 && typeof input[10] === "string") {
       pseudoTX.inputs[0].issuanceAmount = Buffer.from(input[10], "hex");

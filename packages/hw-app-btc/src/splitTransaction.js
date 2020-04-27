@@ -80,10 +80,10 @@ export function splitTransaction(
       offset += 32;
       entropy = transaction.slice(offset, offset + 32);
       offset += 32;
-      let size = getConfidentialDataSize(transaction[offset]);
+      let size = getConfidentialDataSize(transaction[offset], true, false);
       issuanceAmount = transaction.slice(offset, offset + size);
       offset += size;
-      size = getConfidentialDataSize(transaction[offset]);
+      size = getConfidentialDataSize(transaction[offset], true, true);
       inflationKeys = transaction.slice(offset, offset + size);
       offset += size;
     }
