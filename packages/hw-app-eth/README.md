@@ -39,10 +39,16 @@ Ledger Hardware Wallet ETH JavaScript bindings.
         -   [Parameters](#parameters-7)
     -   [starkSignOrder](#starksignorder)
         -   [Parameters](#parameters-8)
-    -   [starkSignTransfer](#starksigntransfer)
+    -   [starkSignOrder_v2](#starksignorder_v2)
         -   [Parameters](#parameters-9)
-    -   [starkProvideQuantum](#starkprovidequantum)
+    -   [starkSignTransfer](#starksigntransfer)
         -   [Parameters](#parameters-10)
+    -   [starkSignTransfer_v2](#starksigntransfer_v2)
+        -   [Parameters](#parameters-11)
+    -   [starkProvideQuantum](#starkprovidequantum)
+        -   [Parameters](#parameters-12)
+    -   [starkProvideQuantum_v2](#starkprovidequantum_v2)
+        -   [Parameters](#parameters-13)
 
 ### byContractAddress
 
@@ -137,7 +143,7 @@ Returns **[Promise](https://developer.mozilla.org/docs/Web/JavaScript/Reference/
 
 #### getAppConfiguration
 
-Returns **[Promise](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Promise)&lt;{arbitraryDataEnabled: [number](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number), erc20ProvisioningNecessary: [number](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number), starkEnabled: [number](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number), version: [string](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String)}>** 
+Returns **[Promise](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Promise)&lt;{arbitraryDataEnabled: [number](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number), erc20ProvisioningNecessary: [number](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number), starkEnabled: [number](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number), starkv2Supported: [number](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number), version: [string](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String)}>** 
 
 #### signPersonalMessage
 
@@ -219,6 +225,30 @@ sign a Stark order
 
 Returns **[Promise](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Promise)&lt;[Buffer](https://nodejs.org/api/buffer.html)>** the signature
 
+#### starkSignOrder_v2
+
+sign a Stark order using the Starkex V2 protocol
+
+##### Parameters
+
+-   `path` **[string](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String)** a path in BIP 32 format
+-   `sourceTokenAddress` **[string](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String)?** 
+-   `sourceQuantizationType` **StarkQuantizationType** quantization type used for the source token
+-   `sourceQuantization` **BigNumber?** 
+-   `sourceMintableBlobOrTokenId` **BigNumber?** 
+-   `destinationTokenAddress` **[string](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String)?** 
+-   `destinationQuantizationType` **StarkQuantizationType** quantization type used for the destination token
+-   `destinationQuantization` **BigNumber?** 
+-   `destinationMintableBlobOrTokenId` **BigNumber?** 
+-   `sourceVault` **[number](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number)** ID of the source vault
+-   `destinationVault` **[number](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number)** ID of the destination vault
+-   `amountSell` **BigNumber** amount to sell
+-   `amountBuy` **BigNumber** amount to buy
+-   `nonce` **[number](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number)** transaction nonce
+-   `timestamp` **[number](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number)** transaction validity timestamp
+
+Returns **[Promise](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Promise)&lt;[Buffer](https://nodejs.org/api/buffer.html)>** the signature
+
 #### starkSignTransfer
 
 sign a Stark transfer
@@ -237,6 +267,28 @@ sign a Stark transfer
 
 Returns **[Promise](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Promise)&lt;[Buffer](https://nodejs.org/api/buffer.html)>** the signature
 
+#### starkSignTransfer_v2
+
+sign a Stark transfer or conditional transfer using the Starkex V2 protocol
+
+##### Parameters
+
+-   `path` **[string](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String)** a path in BIP 32 format
+-   `transferTokenAddress` **[string](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String)?** 
+-   `transferQuantizationType` **StarkQuantizationType** quantization type used for the token to be transferred
+-   `transferQuantization` **BigNumber?** 
+-   `transferMintableBlobOrTokenId` **BigNumber?** 
+-   `targetPublicKey` **[string](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String)** target Stark public key
+-   `sourceVault` **[number](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number)** ID of the source vault
+-   `destinationVault` **[number](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number)** ID of the destination vault
+-   `amountTransfer` **BigNumber** amount to transfer
+-   `nonce` **[number](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number)** transaction nonce
+-   `timestamp` **[number](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Number)** transaction validity timestamp
+-   `conditionalTransferAddress` **[string](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String)?** 
+-   `conditionalTransferFact` **BigNumber?** 
+
+Returns **[Promise](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Promise)&lt;[Buffer](https://nodejs.org/api/buffer.html)>** the signature
+
 #### starkProvideQuantum
 
 provide quantization information before singing a deposit or withdrawal Stark powered contract call
@@ -247,5 +299,20 @@ It shall be run following a provideERC20TokenInformation call for the given cont
 
 -   `operationContract` **[string](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String)?** contract address of the token to be transferred (not present for ETH)
 -   `operationQuantization` **BigNumber** quantization used for the token to be transferred
+
+Returns **[Promise](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Promise)&lt;[boolean](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean)>** 
+
+#### starkProvideQuantum_v2
+
+provide quantization information before singing a deposit or withdrawal Stark powered contract call using the Starkex V2 protocol
+
+It shall be run following a provideERC20TokenInformation call for the given contract
+
+##### Parameters
+
+-   `operationContract` **[string](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String)?** contract address of the token to be transferred (not present for ETH)
+-   `operationQuantizationType` **StarkQuantizationType** quantization type of the token to be transferred
+-   `operationQuantization` **BigNumber?** 
+-   `operationMintableBlobOrTokenId` **BigNumber?** 
 
 Returns **[Promise](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Promise)&lt;[boolean](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean)>** 
