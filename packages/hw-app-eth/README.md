@@ -49,6 +49,8 @@ Ledger Hardware Wallet ETH JavaScript bindings.
         -   [Parameters](#parameters-12)
     -   [starkProvideQuantum_v2](#starkprovidequantum_v2)
         -   [Parameters](#parameters-13)
+    -   [starkUnsafeSign](#starkunsafesign)
+        -   [Parameters](#parameters-14)
 
 ### byContractAddress
 
@@ -316,3 +318,15 @@ It shall be run following a provideERC20TokenInformation call for the given cont
 -   `operationMintableBlobOrTokenId` **BigNumber?** 
 
 Returns **[Promise](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Promise)&lt;[boolean](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Boolean)>** 
+
+#### starkUnsafeSign
+
+sign the given hash over the Stark curve
+It is intended for speed of execution in case an unknown Stark model is pushed and should be avoided as much as possible.
+
+##### Parameters
+
+-   `path` **[string](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String)** a path in BIP 32 format
+-   `hash` **[string](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/String)** hexadecimal hash to sign
+
+Returns **[Promise](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Promise)&lt;[Buffer](https://nodejs.org/api/buffer.html)>** the signature

@@ -909,4 +909,31 @@ eth.signPersonalMessage("44'/60'/0'/0/0", Buffer.from("test").toString("hex")).t
         }
       );
   }
+
+  /**
+   * sign the given hash over the Stark curve
+   * It is intended for speed of execution in case an unknown Stark model is pushed and should be avoided as much as possible.
+   * @param path a path in BIP 32 format
+   * @param hash hexadecimal hash to sign
+   * @return the signature
+   */
+  starkUnsafeSign(path: string, hash: string): Promise<Buffer> {
+    const hashHex = hexBuffer(hash);
+    let paths = splitPath(path);
+    let buffer = Buffer.alloc(1 + paths.length * 4 + 32);
+    let offset = 0;
+    buffer[0] = paths.length;
+    paths.forEach((element, index) => {
+      buffer.writeUInt32BE(element, 1 + 4 * index);
+    });
+    offset = 1 + 4 * paths.length;
+    hashHex.copy(buffer, offset);
+    return this.transport
+      .send(0xf0, 0x0a, 0x00, 0x00, buffer)
+      .then((response) => {
+        const r = response.slice(1, 1 + 32).toString("hex");
+        const s = response.slice(1 + 32, 1 + 32 + 32).toString("hex");
+        return { r, s };
+      });
+  }
 }

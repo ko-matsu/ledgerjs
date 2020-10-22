@@ -601,3 +601,22 @@ test("starkEscapeVerify", async () => {
     v: "1b"
   });
 });
+
+test("starkUnsafeSign", async () => {
+  const Transport = createTransportReplayer(
+    RecordStore.fromString(`
+    => f00a00002d0380000a55a2862ad30000000002376547b651c7d9f13884aaf9b66fec6bfa3c3792a5abaae71e23b82c973182
+    <= 0002e6f8238eda6fe013ed9ff59db87bc9b4299db2aa1ce3594c303566e7a9cf0f0240977bbf20f8dcb0574524c471c446367459aa61e0dcf8566de804788618679000
+    `)
+  );
+  const transport = await Transport.open();
+  const eth = new Eth(transport);
+  const result = await eth.starkUnsafeSign(
+    "2645'/579218131'/0",
+    "02376547B651C7D9F13884AAF9B66FEC6BFA3C3792A5ABAAE71E23B82C973182"
+  );
+  expect(result).toEqual({                        
+    r: "02e6f8238eda6fe013ed9ff59db87bc9b4299db2aa1ce3594c303566e7a9cf0f",        
+    s: "0240977bbf20f8dcb0574524c471c446367459aa61e0dcf8566de80478861867",
+  });
+});
