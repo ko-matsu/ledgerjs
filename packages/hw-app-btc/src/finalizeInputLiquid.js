@@ -9,7 +9,7 @@ export async function hashOutputFullLiquid(
   outputs: Array<LiquidOutputArg>
 ): Promise<void> {
   await transport.send(0xe0, 0x4a, 0x00, 0x00, createVarint(outputs.length));
-  let currentOutput = 0;
+  // let currentOutput = 0;
 
   for (let i=0; i<outputs.length; i++) {
     let offset = 0;

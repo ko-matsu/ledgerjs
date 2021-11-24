@@ -240,7 +240,7 @@ const tx1 = btc.splitTransaction("01000000014ea60aeac5252c14291d428915bd7ccd1bfc
     transaction: Transaction,
     liquidMetadata?: Array<string, string>, 
     additionals: string[] = []
-  ) : string {
+  ): string {
     const serializedTransaction = serializeTransaction(
       transaction,
       false,

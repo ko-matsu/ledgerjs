@@ -39,11 +39,13 @@ const defaultsSignLiquidTransaction = {
  *
  */
 export type CreateLiquidTransactionArg = {
+  /* eslint flowtype/generic-spacing: 0 */
   inputs: Array<
     [Transaction, number, string, string, string, string, ?string, ?number]
   >,
   associatedKeysets: string[],
   changePath?: string,
+  /* eslint flowtype/generic-spacing: 0 */
   outputs: Array<
     [string, string, string, string, string, ?string, ?string, ?string, ?string]
   >,
